@@ -1,0 +1,6 @@
+pytesseract
+Pillow
+PyPDF2
+rdflib
+requests
+pdfplumber

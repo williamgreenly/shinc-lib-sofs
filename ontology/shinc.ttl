@@ -1,0 +1,147 @@
+@prefix : <https://data.shinc.co.uk/>.
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix dc: <http://purl.org/dc/elements/1.1/> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix dcat: <http://www.w3.org/ns/dcat#> .
+@prefix prov: <http://www.w3.org/ns/prov#> .
+
+:Agent a owl:Class;
+    rdfs:label "Agent";
+    rdfs:comment "A Shinc actor/agent".
+
+:ShipAgent a owl:Class;
+    rdfs:subClassOf :Agent;
+    rdfs:label "ShipAgent";
+    rdfs:comment "A Ship Agent acting on behalf of a ship owner".
+
+:Principal a owl:Class;
+    rdfs:subClassOf :Agent;
+    rdfs:label "Principal";
+    rdfs:comment "A Principal in a Laytime Calculation".
+
+:ShipOwner a owl:Class;
+    rdfs:label "ShipOwner";
+    rdfs:comment "A Ship Owner";
+    rdfs:subClassOf :CharterParty.
+
+:Charterer a owl:Class;
+    rdfs:label "Charterer";
+    rdfs:comment "A Charterer";
+    rdfs:subClassOf :CharterParty.
+
+:Shipper a owl:Class;
+    rdfs:label "Shipper";
+    rdfs:comment "Someone who moves cargo";
+    rdfs:subClassOf :CharterParty.
+
+:Voyage a owl:Class;
+    rdfs:label "Voyage";
+    rdfs:comment "A Voyage".
+
+:PortCall a owl:Class;
+    rdfs:label "PortCall";
+    rdfs:comment "a port call".
+
+:LoadPortCall a owl:Class;
+    rdfs:label "LoadPortCall";
+    rdfs:comment "A load port call";
+    rdfs:subClassOf :PortCall.
+
+:DischargePortCall a owl:Class;
+    rdfs:label "DischargePortCall";
+    rdfs:comment "A discharge port call";
+    rdfs:subClassOf :PortCall.
+
+:Cargo a owl:Class;
+    rdfs:label "Cargo";
+    rdfs:comment "A cargo".
+
+:SOF a owl:Class;
+    rdfs:label "SOF";
+    rdfs:comment "Statement of Facts".
+
+:Event a owl:Class;
+    rdfs:label "Event";
+    rdfs:comment "An event on a statement of facts".
+
+:StartEvent a owl:Class;
+    rdfs:subClassOf :BoundedEvent;
+    rdfs:label "StartEvent";
+    rdfs:comment "A start event on a statement of facts".
+
+:EndEvent a owl:Class;
+    rdfs:label "StartEvent";
+    rdfs:subClassOf :BoundedEvent;
+    rdfs:comment "An end event on a statement of facts".
+
+:BoundedEvent a owl:Class;
+    rdfs:label "BoundedEvent";
+    rdfs:subClassOf :Event;
+    rdfs:comment "An event which is either a start of end".
+
+:DisplayableEvent a owl:Class;
+    rdfs:label "DisplayableEvent";
+    rdfs:subClassOf :Event;
+    rdfs:comment "An event that should be displayed".
+
+:LaytimeCalculation a owl:Class;
+    rdfs:label "LaytimeCalculation";
+    rdfs:comment "A laytime calcuation".
+
+:Activity a owl:Class;
+    rdfs:label "Activity";
+    rdfs:comment "A laytime activity".
+
+:Contract a owl:Class;
+    rdfs:label "Contract";
+    rdfs:comment "A contract between 2 or more parties".
+
+:LaytimeContract a owl:Class;
+    rdfs:label "LaytimeContract";
+    rdfs:comment "A laytime contract";
+    rdfs:subClassOf :Contract.
+
+:sequenceNumber a owl:DatatypeProperty;
+    rdfs:label "sequenceNumber";
+    rdfs:comment "a sequence of events or activities";
+    rdfs:domain [
+        owl:unionOf (:Event :Activity)
+    ];
+    rdfs:range xsd:integer.
+
+:vmsNo a owl:DatatypeProperty;
+    rdfs:label "vmsNo";
+    rdfs:comment "VMS number";
+    rdfs:domain :Contract.
+
+:principle a owl:ObjectProperty;
+    rdfs:label "principle";
+    rdfs:comment "Principle in a contract";
+    rdfs:domain :LaytimeContract;
+    rdfs:range :Agent.
+
+:counterParty a owl:ObjectProperty;
+    rdfs:label "counterParty";
+    rdfs:domain :LaytimeContract;
+    rdfs:range :Agent.
+
+:concludes a owl:ObjectProperty;
+    rdfs:label "concludes";
+    rdfs:comment "one event type concludes another".
+
+:isConcludedBy a owl:ObjectProperty;
+    rdfs:label "isConcludedBy";
+    rdfs:comment "conclusion of event type";
+    owl:inverseOf :concludes.
+
+:label a owl:DatatypeProperty;
+    rdfs:label "label";
+    rdfs:subPropertyOf rdfs:label;
+    rdfs:comment "a label".
+
+:comment a owl:DatatypeProperty;
+    rdfs:subPropertyOf rdfs:comment;
+    rdfs:label "comment";
+    rdfs:comment "a longer comment or description".
