@@ -140,7 +140,8 @@ class SOFTextExtractor:
                     res.append (dates.group(1))
         return res
 
-    def createDateTime
+    def generateDate(self, date, time, timezone):
+        pass
 
 
 
