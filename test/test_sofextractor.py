@@ -23,11 +23,11 @@ class SOFExtractorTestCase(unittest.TestCase):
         textfile.close()
 
         self.generator = SOFList('./sofs/sof-master.csv')
-        self.generator.extract()
+        self.generator.generate()
         
 
     def test_ocrextractor(self):
-        extractor = SOFImageExtractor('./images/test_image.jpg','/home/williamgreenly/dev/projects/shinc-lib-ocr/tmpdata')
+        extractor = SOFImageExtractor('./images/test_image.jpg','./tmpdata')
         result = extractor.extract()
         res = False
         for line in result:

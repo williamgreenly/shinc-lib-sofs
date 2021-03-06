@@ -57,13 +57,54 @@ class SOFImageExtractor:
 
 class SOFTextExtractor:
 
-    TIMEPATTERNS = ['([01]\d|2[0-3]):?([0-5]\d)','([01]\d|2[0-3])[.]?([0-5]\d)']
-    DATEPATTERNS = ['^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[13-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$']
+    DATEPATTERNS = [
 
-    def __init__(self, text, soflist, timezone="UTC" timepatterns=None, datepatterns=None):
+        {
+            "name": 'dd/mm/yyyy',
+            "regex": '^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[13-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$',
+            "delimiter": '/'
+        },
+
+        {
+            "name": 'dd.mm.yyyy',
+            "regex": '^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[13-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$',
+            "delimiter": '/'
+        },
+
+        {
+            "name": 'dd-mm-yyyy',
+            "regex": '^(?:(?:31(\/|-|\.)(?:0?[13578]|1[02]))\1|(?:(?:29|30)(\/|-|\.)(?:0?[13-9]|1[0-2])\2))(?:(?:1[6-9]|[2-9]\d)?\d{2})$|^(?:29(\/|-|\.)0?2\3(?:(?:(?:1[6-9]|[2-9]\d)?(?:0[48]|[2468][048]|[13579][26])|(?:(?:16|[2468][048]|[3579][26])00))))$|^(?:0?[1-9]|1\d|2[0-8])(\/|-|\.)(?:(?:0?[1-9])|(?:1[0-2]))\4(?:(?:1[6-9]|[2-9]\d)?\d{2})$',
+            "delimiter": '-'
+        }        
+
+    ]
+
+    TIMEPATTERNS = [
+
+        {
+            "name": 'hh:mm',
+            "regex": '([01]\d|2[0-3]):?([0-5]\d)',
+            "delimiter": ':'
+        },  
+
+        {
+            "name": 'hh.mm',
+            "regex": '([01]\d|2[0-3])[.]?([0-5]\d)',
+            "delimiter": '.'
+        },  
+
+        {
+            "name": 'hhmm',
+            "regex": '([01]\d|2[0-3])([0-5]\d)',
+            "delimiter": ''
+        }  
+
+    ]
+        
+
+    def __init__(self, soflist, summarylist,  timepatterns=None, datepatterns=None):
         self.soflist = soflist
-        self.text = text
-        self.sof = None
+        self.summarylist = summarylist
         if timepatterns:
             self.timepatterns = timepatterns
         else:
@@ -74,33 +115,51 @@ class SOFTextExtractor:
             self.datepatterns = SOFTextExtractor.DATEPATTERNS
         pass
 
-    def extract(self, startdate, starttime):
+    def extract(self, text, starttext=None, endtext=None, startdate=None, enddate=None, datemask="dd-mm-yyyy", timemask="hh.mm", timezone="UTC"):
         sofs = []
+        summary_sofs = []
         date_count = startdate
         time_count = starttime
-        for line in self.text:
-            if self.textContainsSof(line):
-                sof= extractLine(self.text, date_count, time_count)
+        if starttext:
+            started = False
+        else:
+            started = True
+        for line in text:
+            if started and self.textContainsSof(line):
+                sof= extractLine(text, date_count, time_count, datemask, timemask, timezone)
                 date_count = sof.startdate
                 time_count = sof.starttime
-        self.sof = sofs
+                sofs.append(sof)
+            elif started and self.extractDate(line):
+                date_count = self.extractDate()[0]
+            else:
+                if startetext in line:
+                    started = True
         return sofs
                     
 
                 
 
-    def extractLine(self, text, date_count, time_count):
-        softype = textContainsSof(text)
+    def extractLine(self, text, date_count, time_count, datemask, timemask, timezone):
+        softype = self.textContainsSof(text)
         id = SHC + uuid4()
         sof = SOFEvent(id, softype.id, softype.description)
-        times = self.extractTime(text)
-        sof.time_from = times[0]
-        if softype.bounded:
-            sof.time_to = times[1]
-        dates = self.extractDate(text)
-        sof.date_from = dates[0]
-        if len(dates) > 1:
-            sof.date_to = dates[1]
+        times = self.extractTime(text, timemask, timezone)
+        timepattern = next((x for x in self.timepatterns if x.name == timemask), None)
+        datepattern = next((y for y in self.datepatterns if y.name == datemask), None)
+        if times:
+            time_from = parseTime(times[0], timepattern.delimiter)
+            time_to = None
+            if softype.bounded:
+                time_to = parseTime(times[1], timepattern.delimiter)
+        dates = self.extractDate(text, datemask)
+        if dates:
+            date_from = dates[0]
+            date_to = None
+            if len(dates) > 1:
+                date_to = dates[1]
+        if times and not dates and time_to < time_from:
+            date_to = date_to + datetime.timedelta(days=1)
         return sof
 
     def textContainsSof(self, text):
@@ -110,38 +169,38 @@ class SOFTextExtractor:
                 res = sof
         return res
 
-    def extractTime(self, text):
+    def extractTime(self, text, timemask):
         res = None
-        for pattern in self.timepatterns:
-            print ("looking for " + pattern  + " in " + text)
-            times = re.search(pattern, text)
-            if times:
-                print ("found time")
-                res = []
-                res.append( times.group(0))
+        timepattern = next((x for x in self.timepatterns if x.name == timemask), None)
+        if timepattern:
+            for pattern in timepattern.regex:
+                print ("looking for " + pattern  + " in " + text)
+                times = re.search(pattern, text)
+                if times:
+                    print ("found time")
+                    res = []
+                    res.append( times.group(0))
         return res
 
-    def parseTime(self, time):
-        if ":" in time:
-            pass
-        else if "." in time:
+    def parseTime(self, timestring, delimiter):
+        return time(int(timestring.split(delimiter)[0]), int(timestring.split(delimiter)[1]),0)
 
-        else:
-            return 
+    def parseDate(self, datestring, delimiter):
+        return date(int(datestring.split(delimiter)[2]), int(datestring.split(delimiter)[1]), int(datestring.split(delimiter)[0]))
 
-    def extractDate(self, text):
+    def extractDate(self, text, datemask):
         res = None
-        for pattern in self.datepatterns:
-            dates = re.search(pattern,text)
-            if dates:
-                res = []
-                res.append( dates.group(0))
-                if len(dates.groups()) > 1:
-                    res.append (dates.group(1))
-        return res
+        datepattern = next((y for y in self.datepatterns if y.name == datemask), None)
+        if datepattern:
+            for pattern in datepattern.regex:
+                dates = re.search(pattern,text)
+                if dates:
+                    res = []
+                    res.append( dates.group(0))
+            return res
 
-    def generateDate(self, date, time, timezone):
-        pass
+    def generateDatetime(self, dateobj, timeobj, timezone):
+        return datetime(year=dateobj.year, month=dateobj.month, day=dateobj.day,hour=timeobj.hour,minute=timeobj.minute)
 
 
 
@@ -169,11 +228,9 @@ class SOFPDFExtractor:
 class SOFEvent:
     def __init__(self, id, timezone="UTC", type=None, description=None, time_from=None, time_to=None, date_from=None, date_to=None):
         self.id = id
-        self.startdate = date_from
-        self.enddate = date_to
+        self.startdatetime = date_from
         self.description = description
-        self.starttime = time_from
-        self.endtime = time_to
+        self.enddatetime = time_to
         
 
 class SOF:
@@ -196,7 +253,7 @@ class SOFList:
         self.sofs = None
         self.softypes = []
 
-    def extract(self):
+    def generate(self):
         return self.createListFromFile(self.file)
 
     def createListFromFile(self, file):
